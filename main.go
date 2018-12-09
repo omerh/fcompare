@@ -62,7 +62,7 @@ func main() {
 			filesInformation = append(filesInformation, fi)
 		}
 	}
-	// Creating files list for comparison inorder to delete original file information list
+	// Creating files list for comparison in order to delete original file information list
 	compareFilesSlice := filesInformation
 
 	for i := 0; i < len(filesInformation); i++ {
