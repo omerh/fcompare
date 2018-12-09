@@ -29,7 +29,7 @@ func check(e error) {
 func argumentCheck() {
 	if len(os.Args[1:]) == 0 {
 		log.Print("Missing argument for files direcory, Exiting...")
-		os.Exit(0)
+		os.Exit(1)
 	}
 }
 
