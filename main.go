@@ -53,10 +53,7 @@ func main() {
 	filesInformation := []*fileInfo{}
 
 	for _, file := range files {
-		if file.IsDir() == false {
-			f, err := os.Open(filepath.Join(filePath, file.Name()))
-			check(err)
-			defer f.Close()
+		if !file.IsDir() {
 			fi := new(fileInfo)
 			fi.name = file.Name()
 			fi.size = file.Size()
