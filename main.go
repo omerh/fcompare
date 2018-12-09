@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 type fileInfo struct {
@@ -44,7 +45,7 @@ func main() {
 
 	for _, file := range files {
 		if file.IsDir() == false {
-			f, err := os.Open(filePath + "/" + file.Name())
+			f, err := os.Open(filepath.Join(filePath, file.Name()))
 			check(err)
 			defer f.Close()
 			h := md5.New()
