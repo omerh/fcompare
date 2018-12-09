@@ -54,12 +54,12 @@ func main() {
 
 	for _, file := range files {
 		if !file.IsDir() {
-			fi := new(fileInfo)
-			fi.name = file.Name()
-			fi.size = file.Size()
-
+			fi := fileInfo{
+				name: file.Name(),
+				size: file.Size(),
+			}
 			// log.Printf("Adding to slice %v", fileInfo{file.Name(), file.Size(), h.Sum(nil)})
-			filesInformation = append(filesInformation, fi)
+			filesInformation = append(filesInformation, &fi)
 		}
 	}
 	// Creating files list for comparison in order to delete original file information list
