@@ -11,9 +11,9 @@ import (
 )
 
 type fileInfo struct {
-	name     string
-	size     int64
-	checksum []byte
+	name string
+	size int64
+	// checksum []byte
 }
 
 type filesInfo struct {
@@ -34,6 +34,16 @@ func argumentCheck() {
 	}
 }
 
+func getHashForFile(folder string, file string) []byte {
+	f, err := os.Open(filepath.Join(folder, file))
+	check(err)
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		check(err)
+	}
+	return h.Sum(nil)
+}
+
 func main() {
 	log.Print("starting app")
 	argumentCheck()
@@ -48,14 +58,14 @@ func main() {
 			f, err := os.Open(filepath.Join(filePath, file.Name()))
 			check(err)
 			defer f.Close()
-			h := md5.New()
-			if _, err := io.Copy(h, f); err != nil {
-				check(err)
-			}
+			// h := md5.New()
+			// if _, err := io.Copy(h, f); err != nil {
+			// 	check(err)
+			// }
 			fi := new(fileInfo)
 			fi.name = file.Name()
 			fi.size = file.Size()
-			fi.checksum = h.Sum(nil)
+			// fi.checksum = h.Sum(nil)
 			// log.Printf("Adding to slice %v", fileInfo{file.Name(), file.Size(), h.Sum(nil)})
 			filesInformation = append(filesInformation, fi)
 		}
@@ -70,9 +80,11 @@ func main() {
 			if s.name != d.name {
 				// log.Printf("Comparing file %v to %v", s.name, d.name)
 				if s.size == d.size {
+					sH := getHashForFile(filePath, s.name)
+					dH := getHashForFile(filePath, d.name)
 					// log.Printf("Comprating checksum of %v with %x to %v with %x", s.name, s.checksum, d.name, d.checksum)
-					if bytes.Equal(s.checksum, d.checksum) {
-						log.Printf("Files %v and %v are identical with size %v and hash of %x", s.name, d.name, s.size, s.checksum)
+					if bytes.Equal(sH, dH) {
+						log.Printf("Files %v and %v are identical with size %v and hash of %x", s.name, d.name, s.size, sH)
 					}
 				}
 			}
