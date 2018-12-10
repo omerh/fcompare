@@ -19,7 +19,8 @@ func check(e error) {
 }
 
 func argumentCheck() {
-	if len(os.Args[1:]) == 0 {
+	// Checking if only executable name passed to the program without an argument
+	if len(os.Args) == 1 {
 		log.Print("Missing argument for files direcory, Exiting...")
 		os.Exit(1)
 	}
