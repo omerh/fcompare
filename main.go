@@ -19,30 +19,20 @@ type filesInfo struct {
 	fileInfo []fileInfo
 }
 
-func check(e error) {
-	if e != nil {
-		log.Print(e)
-		panic(e)
-	}
-}
-
-func argumentCheck() {
-	if len(os.Args[1:]) == 0 {
-		log.Print("Missing argument for files direcory, Exiting...")
-		os.Exit(1)
-	}
-}
-
 func getHashForFile(folder string, file string) <-chan []byte {
-
 	rc := make(chan []byte)
 
 	go func() {
 		f, err := os.Open(filepath.Join(folder, file))
-		check(err)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		h := md5.New()
+
 		if _, err := io.Copy(h, f); err != nil {
-			check(err)
+			log.Fatal(err)
 		}
 
 		rc <- h.Sum(nil)
@@ -53,10 +43,17 @@ func getHashForFile(folder string, file string) <-chan []byte {
 
 func main() {
 	log.Print("starting app")
-	argumentCheck()
+
+	if len(os.Args[1:]) == 0 {
+		log.Fatal("Missing argument for files direcory, Exiting...")
+	}
+
 	filePath := os.Args[1]
 	files, err := ioutil.ReadDir(filePath)
-	check(err)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	filesInformation := []*fileInfo{}
 
