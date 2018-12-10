@@ -65,8 +65,7 @@ func main() {
 	// Creating files list for comparison in order to delete original file information list
 	compareFilesSlice := filesInformation
 
-	for i := 0; i < len(filesInformation); i++ {
-		var s = filesInformation[i]
+	for _, s := range filesInformation {
 		for _, d := range compareFilesSlice {
 			if s.name == d.name || s.size != d.size {
 				continue
@@ -79,6 +78,5 @@ func main() {
 			}
 		}
 		// Removing from original slice the item that was compared
-		filesInformation = append(filesInformation[:i], filesInformation[i+1:]...)
 	}
 }
