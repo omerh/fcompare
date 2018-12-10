@@ -111,7 +111,8 @@ func HashFiles() map[string][]string {
 
 func main() {
 	if len(os.Args) == 1 {
-		log.Fatal("Missing argument for files direcory, Exiting...")
+		fmt.Printf("\n%[1]s - print identical files in specified directories.\n\n\tusage: %[1]s path1 ... pathN\n\n", os.Args[0])
+		os.Exit(0)
 	}
 
 	results := HashFiles()
