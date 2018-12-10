@@ -57,6 +57,27 @@ func startHashWorkers(fileChan <-chan string) <-chan *HashResult {
 	return rc
 }
 
+func ListFiles() <-chan string {
+	rc := make(chan string)
+	go func() {
+		for _, dir := range os.Args[1:] {
+			files, err := ioutil.ReadDir(dir)
+			if err != nil {
+				log.Printf("%v", err)
+				continue
+			}
+			for _, file := range files {
+				if file.IsDir() {
+					continue
+				}
+				rc <- path.Join(dir, file.Name())
+			}
+		}
+		close(rc)
+	}()
+	return rc
+}
+
 func main() {
 	log.Print("starting app")
 
@@ -64,33 +85,9 @@ func main() {
 		log.Fatal("Missing argument for files direcory, Exiting...")
 	}
 
-	listFiles := func() <-chan string {
-		rc := make(chan string)
-		go func() {
-			for _, dir := range os.Args[1:] {
-				files, err := ioutil.ReadDir(dir)
-
-				if err != nil {
-					log.Printf("%v", err)
-					continue
-				}
-
-				for _, file := range files {
-					if file.IsDir() {
-						continue
-					}
-					rc <- path.Join(dir, file.Name())
-				}
-			}
-			close(rc)
-		}()
-		return rc
-	}
-
 	resultsMap := make(map[string][]string)
 
-	for s := range startHashWorkers(listFiles()) {
-
+	for s := range startHashWorkers(ListFiles()) {
 		// this is subtle.  we attempt to fetch a slice of paths from []resultsMap.
 		// if no entry exists, then we get back the zero value of a slice of
 		// strings which is a nil slice.  otherwise we get back the stored slice of
