@@ -19,7 +19,7 @@ type HashResult struct {
 }
 
 func StartHashWorkers(fileChan <-chan string) <-chan *HashResult {
-	rc := make(chan *HashResult)
+	rc := make(chan *HashResult, runtime.NumCPU())
 
 	// spawn runtime.NumCPU() hash workers
 	go func() {
