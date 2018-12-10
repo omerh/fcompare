@@ -78,14 +78,9 @@ func ListFiles() <-chan string {
 	return rc
 }
 
-func main() {
-	log.Print("starting app")
+func HashFiles() map[string][]string {
 
-	if len(os.Args[1:]) == 0 {
-		log.Fatal("Missing argument for files direcory, Exiting...")
-	}
-
-	resultsMap := make(map[string][]string)
+	rc := make(map[string][]string)
 
 	for s := range startHashWorkers(ListFiles()) {
 		// this is subtle.  we attempt to fetch a slice of paths from []resultsMap.
@@ -100,18 +95,28 @@ func main() {
 		// finally we unconditionally set the hash entry for the hash value to the
 		// new slice of paths, thus adding our new path to the map at that hash's
 		// map entry.
-
-		v := resultsMap[s.Hash]
+		v := rc[s.Hash]
 		v = append(v, s.Path)
-		resultsMap[s.Hash] = v
+		rc[s.Hash] = v
 	}
 
-	for p := range resultsMap {
+	return rc
+}
+
+func main() {
+	log.Print("starting app")
+
+	if len(os.Args[1:]) == 0 {
+		log.Fatal("Missing argument for files direcory, Exiting...")
+	}
+
+	results := HashFiles()
+	for hash := range results {
 		// if the len of our resultsMap[p] is greater than 1, then we have multiple
 		// files with the same hash.  this means the files should be identical so
 		// we print that entry.
-		if len(resultsMap[p]) > 1 {
-			fmt.Printf("%s %s\n", p, resultsMap[p])
+		if len(results[hash]) > 1 {
+			fmt.Printf("%s %s\n", hash, results[hash])
 		}
 	}
 }
