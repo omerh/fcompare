@@ -1,13 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"crypto/md5"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
+	"path"
+	"runtime"
+	"sync"
 )
 
 type fileInfo struct {
@@ -19,25 +20,44 @@ type filesInfo struct {
 	fileInfo []fileInfo
 }
 
-func getHashForFile(folder string, file string) <-chan []byte {
-	rc := make(chan []byte)
+type HashResult struct {
+	Hash []byte
+	Path string
+}
+
+func startHashWorkers(fileChan <-chan string) <-chan *HashResult {
+	rc := make(chan *HashResult)
+	// spawn runtime.NumCPU() hash workers
 
 	go func() {
-		f, err := os.Open(filepath.Join(folder, file))
+		wg := sync.WaitGroup{}
+		wg.Add(runtime.NumCPU())
 
-		if err != nil {
-			log.Fatal(err)
+		for i := 0; i < runtime.NumCPU(); i++ {
+			go func() {
+				for path := range fileChan {
+					f, err := os.Open(path)
+
+					if err != nil {
+						log.Print(err)
+						continue
+					}
+
+					defer f.Close()
+
+					h := md5.New()
+					if _, err := io.Copy(h, f); err != nil {
+						log.Print(err)
+						continue
+					}
+					rc <- &HashResult{Hash: h.Sum(nil), Path: path}
+				}
+				wg.Done()
+			}()
 		}
-
-		h := md5.New()
-
-		if _, err := io.Copy(h, f); err != nil {
-			log.Fatal(err)
-		}
-
-		rc <- h.Sum(nil)
+		wg.Wait()
+		close(rc)
 	}()
-
 	return rc
 }
 
@@ -48,41 +68,34 @@ func main() {
 		log.Fatal("Missing argument for files direcory, Exiting...")
 	}
 
-	filePath := os.Args[1]
-	files, err := ioutil.ReadDir(filePath)
+	listFiles := func() <-chan string {
+		rc := make(chan string)
+		go func() {
+			for _, dir := range os.Args[1:] {
+				files, err := ioutil.ReadDir(dir)
 
-	if err != nil {
-		log.Fatal(err)
+				if err != nil {
+					log.Printf("%v", err)
+					continue
+				}
+
+				for _, file := range files {
+					if !file.IsDir() {
+						rc <- path.Join(dir, file.Name())
+					}
+				}
+			}
+			close(rc)
+		}()
+		return rc
 	}
 
-	filesInformation := []*fileInfo{}
-
-	for _, file := range files {
-		if !file.IsDir() {
-			fi := fileInfo{
-				name: file.Name(),
-				size: file.Size(),
-			}
-			// log.Printf("Adding to slice %v", fileInfo{file.Name(), file.Size(), h.Sum(nil)})
-			filesInformation = append(filesInformation, &fi)
-		}
+	resultsMap := make(map[string][]byte)
+	for s := range startHashWorkers(listFiles()) {
+		resultsMap[s.Path] = s.Hash
 	}
-	// Creating files list for comparison in order to delete original file information list
-	compareFilesSlice := filesInformation
 
-	for _, s := range filesInformation {
-		for _, d := range compareFilesSlice {
-			if s.name == d.name || s.size != d.size {
-				continue
-			}
-
-			sH := getHashForFile(filePath, s.name)
-			dH := getHashForFile(filePath, d.name)
-			// log.Printf("Comprating checksum of %v with %x to %v with %x", s.name, s.checksum, d.name, d.checksum)
-			if bytes.Equal(<-sH, <-dH) {
-				log.Printf("Files %v and %v are identical with size %v and hash of %x", s.name, d.name, s.size, sH)
-			}
-		}
-		// Removing from original slice the item that was compared
+	for p := range resultsMap {
+		log.Printf("%#v", resultsMap[p])
 	}
 }
