@@ -63,6 +63,8 @@ func StartHashWorkers(fileChan <-chan string, numWorkers int) <-chan *HashResult
 func ListFiles(dirs []string) <-chan string {
 	rc := make(chan string)
 	go func() {
+		fsize := make(map[int64][]string)
+		// gather files of the same size.
 		for _, dir := range dirs {
 			files, err := ioutil.ReadDir(dir)
 			if err != nil {
@@ -73,7 +75,18 @@ func ListFiles(dirs []string) <-chan string {
 				if file.IsDir() {
 					continue
 				}
-				rc <- path.Join(dir, file.Name())
+				fsize[file.Size()] = append(fsize[file.Size()], path.Join(dir, file.Name()))
+			}
+		}
+
+		// send groups of same sized files to hasher
+		for _, paths := range fsize {
+			if len(paths) == 1 {
+				continue
+			}
+
+			for _, path := range paths {
+				rc <- path
 			}
 		}
 		close(rc)
