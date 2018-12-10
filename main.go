@@ -18,10 +18,10 @@ type HashResult struct {
 	Path string
 }
 
-func startHashWorkers(fileChan <-chan string) <-chan *HashResult {
+func StartHashWorkers(fileChan <-chan string) <-chan *HashResult {
 	rc := make(chan *HashResult)
-	// spawn runtime.NumCPU() hash workers
 
+	// spawn runtime.NumCPU() hash workers
 	go func() {
 		wg := sync.WaitGroup{}
 		wg.Add(runtime.NumCPU())
@@ -52,6 +52,8 @@ func startHashWorkers(fileChan <-chan string) <-chan *HashResult {
 			}()
 		}
 		wg.Wait()
+
+		// signal to the caller that we have no more results to send.
 		close(rc)
 	}()
 	return rc
@@ -79,10 +81,9 @@ func ListFiles() <-chan string {
 }
 
 func HashFiles() map[string][]string {
-
 	rc := make(map[string][]string)
 
-	for s := range startHashWorkers(ListFiles()) {
+	for s := range StartHashWorkers(ListFiles()) {
 		// this is subtle.  we attempt to fetch a slice of paths from []resultsMap.
 		// if no entry exists, then we get back the zero value of a slice of
 		// strings which is a nil slice.  otherwise we get back the stored slice of
