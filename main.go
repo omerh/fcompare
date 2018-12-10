@@ -96,9 +96,14 @@ func HashFiles() map[string][]string {
 		// finally we unconditionally set the hash entry for the hash value to the
 		// new slice of paths, thus adding our new path to the map at that hash's
 		// map entry.
-		v := rc[s.Hash]
-		v = append(v, s.Path)
-		rc[s.Hash] = v
+		//
+		// The code below is equivalent to the following:
+		//
+		// v := rc[s.Hash]
+		// v = append(v, s.Path)
+		// rc[s.Hash] = v
+		//
+		rc[s.Hash] = append(rc[s.Hash], s.Path)
 	}
 
 	return rc
