@@ -28,6 +28,7 @@ func StartHashWorkers(fileChan <-chan string, numWorkers int) <-chan *HashResult
 
 		for i := 0; i < numWorkers; i++ {
 			go func() {
+				h := md5.New()
 				for path := range fileChan {
 					f, err := os.Open(path)
 
@@ -38,7 +39,7 @@ func StartHashWorkers(fileChan <-chan string, numWorkers int) <-chan *HashResult
 
 					defer f.Close()
 
-					h := md5.New()
+					h.Reset()
 					if _, err := io.Copy(h, f); err != nil {
 						log.Print(err)
 						continue
