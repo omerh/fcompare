@@ -18,15 +18,15 @@ type HashResult struct {
 	Path string
 }
 
-func StartHashWorkers(fileChan <-chan string) <-chan *HashResult {
-	rc := make(chan *HashResult, runtime.NumCPU())
+func StartHashWorkers(fileChan <-chan string, numWorkers int) <-chan *HashResult {
+	rc := make(chan *HashResult, numWorkers)
 
-	// spawn runtime.NumCPU() hash workers
+	// spawn numWorkers hash workers
 	go func() {
 		wg := sync.WaitGroup{}
-		wg.Add(runtime.NumCPU())
+		wg.Add(numWorkers)
 
-		for i := 0; i < runtime.NumCPU(); i++ {
+		for i := 0; i < numWorkers; i++ {
 			go func() {
 				for path := range fileChan {
 					f, err := os.Open(path)
@@ -83,7 +83,7 @@ func ListFiles() <-chan string {
 func HashFiles() map[string][]string {
 	rc := make(map[string][]string)
 
-	for s := range StartHashWorkers(ListFiles()) {
+	for s := range StartHashWorkers(ListFiles(), runtime.NumCPU()) {
 		// this is subtle.  we attempt to fetch a slice of paths from []resultsMap.
 		// if no entry exists, then we get back the zero value of a slice of
 		// strings which is a nil slice.  otherwise we get back the stored slice of
