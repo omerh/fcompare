@@ -112,7 +112,7 @@ func HashFiles() map[string][]string {
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Printf("\n%[1]s - print identical files in specified directories.\n\n\tusage: %[1]s path1 ... pathN\n\n", os.Args[0])
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	results := HashFiles()
