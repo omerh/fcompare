@@ -104,8 +104,6 @@ func HashFiles() map[string][]string {
 }
 
 func main() {
-	log.Print("starting app")
-
 	if len(os.Args) == 1 {
 		log.Fatal("Missing argument for files direcory, Exiting...")
 	}
