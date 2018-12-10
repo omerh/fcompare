@@ -14,7 +14,7 @@ import (
 )
 
 type HashResult struct {
-	Hash []byte
+	Hash string
 	Path string
 }
 
@@ -43,7 +43,10 @@ func startHashWorkers(fileChan <-chan string) <-chan *HashResult {
 						log.Print(err)
 						continue
 					}
-					rc <- &HashResult{Hash: h.Sum(nil), Path: path}
+					// turn hash into a string. we do this to give us a text representation of
+					// the hash AND to give us a comparable value to use as a map index.
+					hashString := hex.EncodeToString(h.Sum(nil))
+					rc <- &HashResult{Hash: hashString, Path: path}
 				}
 				wg.Done()
 			}()
@@ -87,9 +90,6 @@ func main() {
 	resultsMap := make(map[string][]string)
 
 	for s := range startHashWorkers(listFiles()) {
-		// turn hash into a string. we do this to give us a text representation of
-		// the hash AND to give us a comparable value to use as a map index.
-		hashString := hex.EncodeToString(s.Hash)
 
 		// this is subtle.  we attempt to fetch a slice of paths from []resultsMap.
 		// if no entry exists, then we get back the zero value of a slice of
@@ -104,9 +104,9 @@ func main() {
 		// new slice of paths, thus adding our new path to the map at that hash's
 		// map entry.
 
-		v := resultsMap[hashString]
+		v := resultsMap[s.Hash]
 		v = append(v, s.Path)
-		resultsMap[hashString] = v
+		resultsMap[s.Hash] = v
 	}
 
 	for p := range resultsMap {
