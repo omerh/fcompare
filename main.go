@@ -116,13 +116,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	results := HashFiles(StartHashWorkers(ListFiles(os.Args[1:]), runtime.NumCPU()))
-	for hash := range results {
-		// if the len of our resultsMap[p] is greater than 1, then we have multiple
-		// files with the same hash.  this means the files should be identical so
-		// we print that entry.
-		if len(results[hash]) > 1 {
-			fmt.Printf("%s %s\n", hash, results[hash])
+	for hash, paths := range HashFiles(StartHashWorkers(ListFiles(os.Args[1:]), runtime.NumCPU())) {
+		if len(paths) == 1 {
+			continue
 		}
+		fmt.Printf("%s %s\n", hash, paths)
 	}
 }
