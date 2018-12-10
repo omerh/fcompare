@@ -2,6 +2,8 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/hex"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -10,15 +12,6 @@ import (
 	"runtime"
 	"sync"
 )
-
-type fileInfo struct {
-	name string
-	size int64
-}
-
-type filesInfo struct {
-	fileInfo []fileInfo
-}
 
 type HashResult struct {
 	Hash []byte
@@ -91,12 +84,37 @@ func main() {
 		return rc
 	}
 
-	resultsMap := make(map[string][]byte)
+	resultsMap := make(map[string][]string)
+
 	for s := range startHashWorkers(listFiles()) {
-		resultsMap[s.Path] = s.Hash
+		// turn hash into a string. we do this to give us a text representation of
+		// the hash AND to give us a comparable value to use as a map index.
+		hashString := hex.EncodeToString(s.Hash)
+
+		// this is subtle.  we attempt to fetch a slice of paths from []resultsMap.
+		// if no entry exists, then we get back the zero value of a slice of
+		// strings which is a nil slice.  otherwise we get back the stored slice of
+		// strings.
+		//
+		// either way, we unconditionally append to that slice.  in the case that v
+		// is a nil slice, this creates a new, single value.  if v is not nil, we
+		// add another path to the existing slice of paths with the same hash.
+		//
+		// finally we unconditionally set the hash entry for the hash value to the
+		// new slice of paths, thus adding our new path to the map at that hash's
+		// map entry.
+
+		v := resultsMap[hashString]
+		v = append(v, s.Path)
+		resultsMap[hashString] = v
 	}
 
 	for p := range resultsMap {
-		log.Printf("%#v", resultsMap[p])
+		// if the len of our resultsMap[p] is greater than 1, then we have multiple
+		// files with the same hash.  this means the files should be identical so
+		// we print that entry.
+		if len(resultsMap[p]) > 1 {
+			fmt.Printf("%s %s\n", p, resultsMap[p])
+		}
 	}
 }
