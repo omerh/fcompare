@@ -59,10 +59,10 @@ func StartHashWorkers(fileChan <-chan string, numWorkers int) <-chan *HashResult
 	return rc
 }
 
-func ListFiles() <-chan string {
+func ListFiles(dirs []string) <-chan string {
 	rc := make(chan string)
 	go func() {
-		for _, dir := range os.Args[1:] {
+		for _, dir := range dirs {
 			files, err := ioutil.ReadDir(dir)
 			if err != nil {
 				log.Printf("%v", err)
@@ -80,10 +80,10 @@ func ListFiles() <-chan string {
 	return rc
 }
 
-func HashFiles() map[string][]string {
+func HashFiles(hr <-chan *HashResult) map[string][]string {
 	rc := make(map[string][]string)
 
-	for s := range StartHashWorkers(ListFiles(), runtime.NumCPU()) {
+	for s := range hr {
 		// this is subtle.  we attempt to fetch a slice of paths from []resultsMap.
 		// if no entry exists, then we get back the zero value of a slice of
 		// strings which is a nil slice.  otherwise we get back the stored slice of
@@ -115,7 +115,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	results := HashFiles()
+	results := HashFiles(StartHashWorkers(ListFiles(os.Args[1:]), runtime.NumCPU()))
 	for hash := range results {
 		// if the len of our resultsMap[p] is greater than 1, then we have multiple
 		// files with the same hash.  this means the files should be identical so
