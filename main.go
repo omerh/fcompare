@@ -68,16 +68,14 @@ func main() {
 	for i := 0; i < len(filesInformation); i++ {
 		var s = filesInformation[i]
 		for _, d := range compareFilesSlice {
-			if s.name != d.name {
-				// log.Printf("Comparing file %v to %v", s.name, d.name)
-				if s.size == d.size {
-					sH := getHashForFile(filePath, s.name)
-					dH := getHashForFile(filePath, d.name)
-					// log.Printf("Comprating checksum of %v with %x to %v with %x", s.name, s.checksum, d.name, d.checksum)
-					if bytes.Equal(sH, dH) {
-						log.Printf("Files %v and %v are identical with size %v and hash of %x", s.name, d.name, s.size, sH)
-					}
-				}
+			if s.name == d.name || s.size != d.size {
+				continue
+			}
+			sH := getHashForFile(filePath, s.name)
+			dH := getHashForFile(filePath, d.name)
+			// log.Printf("Comprating checksum of %v with %x to %v with %x", s.name, s.checksum, d.name, d.checksum)
+			if bytes.Equal(sH, dH) {
+				log.Printf("Files %v and %v are identical with size %v and hash of %x", s.name, d.name, s.size, sH)
 			}
 		}
 		// Removing from original slice the item that was compared
