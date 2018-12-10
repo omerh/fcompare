@@ -80,9 +80,10 @@ func main() {
 				}
 
 				for _, file := range files {
-					if !file.IsDir() {
-						rc <- path.Join(dir, file.Name())
+					if file.IsDir() {
+						continue
 					}
+					rc <- path.Join(dir, file.Name())
 				}
 			}
 			close(rc)
