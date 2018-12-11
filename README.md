@@ -1,9 +1,10 @@
 # fcompare - A tiny file comparison program written in go
 
 This is a quick way for locating identical files in a folder.
-Pass to the program the folder you want to check
 
-Build
+Pass the folder you want to check to the program
+
+## Build
 
 ```bash
 go get -u github.com/omerh/fcompare
@@ -14,8 +15,13 @@ cd ~/go/src/github.com/omerh/fcompare
 go build
 ```
 
-Run the app
+## Run
 
 ```bash
-./fcompare /directory
+fcompare [-t] <directory>
 ```
+
+## Args
+arg name | type | default value | usage
+--- | --- | --- | ---
+t | bool | false | set to true for calculating hashes in parallel
