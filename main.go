@@ -18,7 +18,7 @@ func check(e error) {
 	}
 }
 
-func argumentCheck() {
+func init() {
 	// Checking if only executable name passed to the program without an argument
 	if len(os.Args) == 1 {
 		log.Print("Missing argument for files direcory, Exiting...")
@@ -39,47 +39,48 @@ func getHashForFile(folder string, file string) []byte {
 
 func main() {
 	log.Print("starting app")
-	argumentCheck()
-	filePath := os.Args[1]
-	files, err := ioutil.ReadDir(filePath)
+	direcory := os.Args[1]
+	files, err := ioutil.ReadDir(direcory)
 	check(err)
 
 	// map of file size to the first file name
-	sizeToFirstFileName := make(map[int64]string)
+	fileSizeToCheck := make(map[int64]map[string][]byte)
 	// map of the identical files according to thier md5 hash
 	identicalFiles := make(map[string][]string)
 
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		size := file.Size()
-		// Check if map has the size key
-		previousFileName, inMap := sizeToFirstFileName[size]
-		if !inMap {
-			// Add the first file with the size
-			sizeToFirstFileName[size] = file.Name()
-		} else {
-			//check hash of the current file
-			currentFileHash := getHashForFile(filePath, file.Name())
-			// check hash of the already in map file
-			previousFileHash := getHashForFile(filePath, previousFileName)
-
-			if bytes.Equal(currentFileHash, previousFileHash) {
-				hashString := hex.EncodeToString(currentFileHash)
-				// Check if this is the first hash
-				slice, inMap := identicalFiles[hashString]
-				if !inMap {
-					// Insert new hash to map
-					identicalFiles[hashString] = []string{previousFileName, file.Name()}
-				} else {
-					// Add identical file to the map
-					identicalFiles[hashString] = append(slice, file.Name())
-				}
+	for i := 0; i < len(files); i++ {
+		if file := files[i]; !file.IsDir() {
+			size := file.Size()
+			name := file.Name()
+			checkedFile, inMap := fileSizeToCheck[size]
+			if inMap {
+				currentFileHash := getHashForFile(direcory, name)
+				CHECKLOOP:
+					for check := range checkedFile {
+						if checkedFile[check] == nil {
+							checkedFile[check] = getHashForFile(direcory, check)
+						}
+						if bytes.Equal(checkedFile[check], currentFileHash) {
+							hexString := hex.EncodeToString(currentFileHash)
+							identicalSlice, inMap := identicalFiles[hexString]
+							if inMap {
+								identicalFiles[hexString] = append(identicalSlice, name)
+							} else {
+								identicalFiles[hexString] = []string{check, name}
+							}
+							break CHECKLOOP
+						}
+					}
+					checkedFile[name] = nil
+			} else {
+				fileSizeToCheck[size] = map[string][]byte{name: nil}
 			}
 		}
 	}
+	printResult(identicalFiles)
+}
 
+func printResult(identicalFiles map[string][]string ) {
 	// Print indentical files
 	for k, v := range identicalFiles {
 		log.Printf("The following files are identicals with the hash %v", k)
